@@ -7,19 +7,49 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
 
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+
+    let tableView: UITableView = {
+        let tableView = UITableView()
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+        //tableView.translatesAutoresizingMaskIntoConstraints = false
+        return tableView
+    }()
+
+    private var models = [TodoListItem]()
 
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
+        view.addSubview(tableView)
+        title = "Core Data todo list"
+        tableView.dataSource = self
+        tableView.delegate = self
+        tableView.frame = view.bounds
+    }
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        models.count
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+
+       let model = models[indexPath.row]
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
+
+        cell.textLabel?.text = model.name
+        return cell
     }
 
     // Core Data
     func getAllItems() {
         do {
-           try context.fetch(TodoListItem.fetchRequest())
+            models = try context.fetch(TodoListItem.fetchRequest())
+            DispatchQueue.main.async {
+                self.tableView.reloadData()
+            }
         }
         catch {
             print("Error fetching data")
