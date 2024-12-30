@@ -24,10 +24,46 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         super.viewDidLoad()
         // Do any additional setup after loading the view.
         view.addSubview(tableView)
+        getAllItems()
         title = "Core Data todo list"
         tableView.dataSource = self
         tableView.delegate = self
         tableView.frame = view.bounds
+
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            barButtonSystemItem: .add,
+            target: self,
+            action: #selector(addItem)
+        )
+    }
+
+    @objc private func addItem() {
+        let alert = UIAlertController(
+            title: "Add Item",
+            message: "Enter new Item",
+            preferredStyle: .alert
+        )
+
+        alert.addTextField(configurationHandler: nil)
+
+        alert.addAction(UIAlertAction(
+            title: "Submit",
+            style: .cancel,
+            handler: { [weak self] _ in
+                guard
+                    let field = alert.textFields?.first,
+                    let text = field.text,
+                    !text.isEmpty
+                else {
+                    print("Text field is empty")
+                    return
+                }
+
+                self?.createItem(name: text)
+            }
+        )
+        )
+        present(alert, animated: true)
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -41,6 +77,66 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
 
         cell.textLabel?.text = model.name
         return cell
+    }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+
+        let item = models[indexPath.row]
+
+        let sheet = UIAlertController(
+            title: "Edit Item",
+            message: nil,
+            preferredStyle: .actionSheet
+        )
+
+        sheet.addAction(UIAlertAction(title: "Cancle", style: .cancel, handler: { _ in } ))
+
+        sheet.addAction(UIAlertAction(
+            title: "Edit",
+            style: .default,
+            handler: { _ in
+
+                let alert = UIAlertController(
+                    title: "Add Item",
+                    message: "Enter new Item",
+                    preferredStyle: .alert
+                )
+
+                alert.addTextField(configurationHandler: nil)
+
+                alert.textFields?.first?.text = item.name
+
+                alert.addAction(UIAlertAction(
+                    title: "Save",
+                    style: .cancel,
+                    handler: { [weak self] _ in
+                        guard
+                            let field = alert.textFields?.first,
+                            let newText = field.text,
+                            !newText.isEmpty
+                        else {
+                            print("Text field is empty")
+                            return
+                        }
+
+                        self?.updateItem(item: item, name: newText)
+                    }
+                )
+                )
+                self.present(alert, animated: true)
+            }
+        ))
+
+
+        sheet.addAction(UIAlertAction(
+            title: "Delete",
+            style: .destructive,
+            handler: {  [weak self]_ in
+                self?.deleteItem(item: item)
+            }
+        ))
+
+        present(sheet, animated: true)
     }
 
     // Core Data
@@ -63,6 +159,7 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
 
         do {
             try context.save()
+            getAllItems()
         } catch {
             print("Error while saving data")
         }
@@ -74,6 +171,7 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
 
         do {
             try context.save()
+            getAllItems()
         } catch {
             print("Error while Deleting data")
         }
@@ -85,6 +183,7 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         
         do {
             try context.save()
+            getAllItems()
         } catch {
             print("Error while Deleting data")
         }
